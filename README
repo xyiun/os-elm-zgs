@@ -1,0 +1,57 @@
+这是OS-ELM-ZGS的CPP实现
+
+一.依赖：
+	1.g++ (support c++11)
+	2.CMake (>3)
+	3.Make
+	4.Eigen 
+    5.mpich : >=4.0.1 官网：https://www.mpich.org/downloads/   安装方式：全局安装 make , make install
+      注意 一定要确保 多机的所有依赖 版本都是一致的 否则无法执行
+
+二.编译
+    tar zxcf data.tar.gz // 解压数据文件
+	mkdir build
+	cd build
+	cmake ..
+	make
+
+三.说明
+    OS-ELM-ZGS计算模块介绍：
+    OS-ELM-ZGS是一个用于分布式在线凸优化的算法。支持分类和回归。
+    使用方式：
+    1.初始化ZGS配置。创建ZgsConfig，并填入参数：
+        inputDim : 输入的向量维度
+        outputDim： 输出的向量维度
+        Beta：模型非线性映射的超参数 一般默认0.1即可
+        Lambda: 正则化参数 一般默认0.001
+        IterTime: 分布式凸优化时的迭代次数 一般默认1000. 如果执行过长，可以调小此参数 如果不收敛 需要调大
+        GammaA,GammaB：分布式凸优化时的超参数 一般GammaA默认0.001 GammaB默认0.01 如果不收敛 需要调小
+
+    2.创建并初始化ZGS对象。
+    3.使用少量数据进行初始化训练。InitFit()
+    4.有新数据后,调用Update进行在线学习，更新模型参数
+    5.在经过InitFit后，即可在任意时间 调用Predict进行预测。通常，Update的次数越多，预测结果越好
+
+    Demo1:
+    示例程序1对y = sin(x[0]) + cos(x[1]) 这个二元函数进行和回归
+
+    Demo2:
+    示例程序2模拟了复杂数据的分类任务。
+    对于复杂数据，建议使用其他深度模型进行特征提取，然后将提取出的特征交给os-elm-zgs 进行分类。
+    （当然特征提取器的模型也可以使用深度ELM）
+    
+    这里我们使用了一个预先训练好的单层NN进行特征提取。
+    
+四.单机多核执行
+    如果只需要进行单机CPU执行，可以直接运行可执行文件，例如：
+    ./demo1
+
+    如果需要进行单机多CPU执行，需要使用mpiexec执行，例如：
+    mpiexec -n 2 ./demo1
+    将会使用两个CPU进行运行
+
+
+五.多机多核执行
+    如果需要进行多机多CPU执行，需要配置好mpi集群，并指定mpiexec参数。
+    mpi集群的配置方法参考：https://my.oschina.net/zctzl/blog/1560593
+    配置好集群后 执行： mpiexec -n 2 -h host1,host2,...,hostN ./demo2
